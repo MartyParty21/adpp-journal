@@ -90,7 +90,7 @@ public class ScenarioCreator {
     }
 
     ///////////////////////////////////////////////////////////////////////
-    
+
     static long startedAt;
     static Logger LOGGER = Logger.getLogger(ScenarioCreator.class);
 	final static int RADIUS_GRACE = 1;
@@ -113,12 +113,16 @@ public class ScenarioCreator {
 
     private static EarliestArrivalProblem problem;
 
+    public static EarliestArrivalProblem getProblem() {
+        return problem;
+    }
+
     private static final long TICK_INTERVAL_NS = 100 /*ms*/ * 1000000;
-    
-    public static void createFromArgs(String[] args) {
+
+    public static Parameters createFromArgs(String[] args) {
     	startedAt = System.currentTimeMillis();
     	Parameters params = new Parameters();
-    	 	
+
     	String xml = Args.getArgumentValue(args, "-problemfile", true);
     	String methodStr = Args.getArgumentValue(args, "-method", true);
     	String maxTimeStr = Args.getArgumentValue(args, "-maxtime", true);
@@ -131,17 +135,19 @@ public class ScenarioCreator {
         params.summaryPrefix = Args.getArgumentValue(args, "-summaryprefix", false, "");
         params.activityLogFile = Args.getArgumentValue(args, "-activitylog", false, null);
         String bgImgFileName = Args.getArgumentValue(args, "-bgimg", false, null);
-        
-        
+
+
+		boolean agentsRemote = Args.isArgumentSet(args, "-agentsRemote");
+
 		File file = new File(xml);
 	    params.fileName = file.getName();
-	    
+
 	    // Load the PNG image as a background, if provided
 	    if (bgImgFileName != null) {
 		    File bgImgFile = new File(bgImgFileName);
 		    if (bgImgFile.exists()) {
 		    	params.bgImageFile = bgImgFile;
-		    }        	
+		    }
         }
 
 	    try {
@@ -151,18 +157,22 @@ public class ScenarioCreator {
 		}
 
 	    Method method = Method.valueOf(methodStr);
-	    
+
 	    params.noOfClusters = computeNoOfClusters(problem, params);
 	    LOGGER.debug("Number of clusters: " + params.noOfClusters);
-	    
+
 	    params.runtimeDeadlineMs = 3600*1000; /* default timeout is 1 hour */
 	    if (timeoutStr != null) {
 	    	int timeout = Integer.parseInt(timeoutStr);
 	    	params.runtimeDeadlineMs = timeout;
 	    	killAt(System.currentTimeMillis() + timeout, params.summaryPrefix, params.noOfClusters);
 	    }
-	    
-    	create(problem, method, params);
+
+		if(agentsRemote) {
+			return params;
+		}
+		create(problem, method, params);
+		return null;
     }
 
 
@@ -184,22 +194,22 @@ public class ScenarioCreator {
 
 
 	public static void create(EarliestArrivalProblem problem, Method method, final Parameters params) {
-		
+
         if (params.showVis) {
             VisUtil.initVisualization(problem, "Trajectory Tools ("+method.toString()+")", params.bgImageFile, params.timeStep/2);
             VisUtil.visualizeProblem(problem);
         }
 
         switch (method) {
-        
+
 	        case BASE:
 	            solveBASE(problem, params, false);
 	            break;
-	        
+
 	        case BASEST:
 	            solveBASE(problem, params, true);
 	            break;
-	        
+
 	        case PP:
 	            solvePP(problem, false, params);
 	            break;
@@ -207,19 +217,19 @@ public class ScenarioCreator {
 	        case RPP:
 	            solvePP(problem, true, params);
 	            break;
-	        
+
 	        case ADPP:
 	            solveADPP(problem, false, params);
-	            break;    
-	            
+	            break;
+
 	        case ADRPP:
 	            solveADPP(problem, true, params);
 	            break;
-	        
+
 	        case SDPP:
 	            solveSDPP(problem, false, params);
 	            break;
-	            
+
 	        case SDRPP:
 	            solveSDPP(problem, true, params);
 	            break;
@@ -245,16 +255,16 @@ public class ScenarioCreator {
 
         }
     }
-	
+
     private static void solveBASE(final EarliestArrivalProblem problem, final Parameters params, boolean useSpaceTimePlanner) {
         final EvaluatedTrajectory[] trajs = new EvaluatedTrajectory[problem.nAgents()];
-        
+
         long startedAtMs = System.currentTimeMillis();
         Status status = Status.SUCCESS;
-        
+
 		for (int i = 0; i < problem.nAgents(); i++) {
             final int iFinal = i;
-            
+
             EvaluatedTrajectory traj = null;
             if (useSpaceTimePlanner) {
                 Collection<tt.euclid2i.Region> sObst = new LinkedList<tt.euclid2i.Region>();
@@ -274,19 +284,19 @@ public class ScenarioCreator {
                 	traj = new LineSegmentsConstantSpeedTrajectory(0, path, 1, params.maxTime);
                 }
             }
-			
+
 			if (traj != null) {
 				trajs[i] = traj;
 			} else {
 				status = Status.FAIL;
 			}
 		}
-		
+
 		long finishedAtMs = System.currentTimeMillis();
-		
+
 		solve(problem, new AgentFactory() {
 			int i=0;
-			
+
 			@Override
 			public Agent createAgent(String name, int i, Point start, Point target,
 					Environment env, DirectedGraph<Point, Line> planningGraph,
@@ -296,33 +306,33 @@ public class ScenarioCreator {
 				return agent;
 			}
 		}, TICK_INTERVAL_NS, (long) (params.runtimeDeadlineMs*1e6), params);
-		
-		
+
+
 		final List<Agent> agents = new LinkedList<Agent>();
 		for (int i = 0; i < problem.nAgents(); i++) {
 			agents.add(new FixedTrajectoryAgent("a"+i, problem.getStart(i), problem.getTarget(i) , problem.getEnvironment(), problem.getBodyRadius(i), trajs[i]));
 		}
 		printSummary(params.summaryPrefix, status, agents, finishedAtMs - startedAtMs, params.noOfClusters);
-		
+
 		if (!params.showVis) {
 			System.exit(0);
 		}
     }
-	
+
     private static void solvePP(final EarliestArrivalProblem problem, boolean avoidStartRegions, final Parameters params) {
         final EvaluatedTrajectory[] trajs = new EvaluatedTrajectory[problem.nAgents()];
-        
+
         long programStartedAtNs = System.nanoTime();
         Status status = Status.SUCCESS;
-        
+
         Collection<ActivityLogEntry> activityLog = new LinkedList<ActivityLogEntry>();
-        
+
 		for (int i = 0; i < problem.nAgents(); i++) {
 			long activityStart = System.nanoTime();
 			int expandedStatesBefore = Counters.expandedStatesCounter;
             Collection<tt.euclid2i.Region> sObst = new LinkedList<tt.euclid2i.Region>();
             Collection<tt.euclidtime3i.Region> dObst = new LinkedList<tt.euclidtime3i.Region>();
-                        
+
             for (int j=0; j<problem.nAgents(); j++) {
             	if (j < i) {
             		dObst.add(new MovingCircle(trajs[j], problem.getBodyRadius(i) + problem.getBodyRadius(j) + RADIUS_GRACE));
@@ -330,17 +340,17 @@ public class ScenarioCreator {
             		sObst.add(new Circle(problem.getStart(j), problem.getBodyRadius(i) + problem.getBodyRadius(j) + RADIUS_GRACE));
             	}
             }
-            
+
 			HeuristicToGoal<tt.euclidtime3i.Point> heuristic = new ShortestPathHeuristic(problem.getPlanningGraph(), problem.getTarget(i));
 			EvaluatedTrajectory traj = BestResponse.computeBestResponse(problem.getStart(i), problem.getTarget(i), problem.getPlanningGraph(), heuristic , sObst, dObst, params.maxTime, params.timeStep);
-			
+
 			int expandedStatesAfter = Counters.expandedStatesCounter;
-			
+
 			long activityDuration = System.nanoTime() - activityStart;
-			
-			activityLog.add(new ActivityLogEntry("a"+ new DecimalFormat("00").format(i), 
+
+			activityLog.add(new ActivityLogEntry("a"+ new DecimalFormat("00").format(i),
 					ActivityLogEntry.Type.EVENT_HANDLED, activityStart - programStartedAtNs, activityDuration, expandedStatesAfter - expandedStatesBefore));
-			
+
 			if (traj != null) {
 				trajs[i] = traj;
 				LOGGER.debug("Agent " + i + " successfully finished planning in " + activityDuration/1000000 + "ms");
@@ -349,12 +359,12 @@ public class ScenarioCreator {
 				status = Status.FAIL;
 				break;
 			}
-			
+
 		}
-		
+
 		long finishedAtMs = System.nanoTime();
-		
-		
+
+
 		solve(problem, new AgentFactory() {
 			@Override
 			public Agent createAgent(String name, int i,Point start, Point target,
@@ -365,23 +375,23 @@ public class ScenarioCreator {
 				return agent;
 			}
 		}, TICK_INTERVAL_NS, (long) (params.runtimeDeadlineMs*1e6), params);
-		
-		
+
+
 		final List<Agent> agents = new LinkedList<Agent>();
 		for (int i = 0; i < problem.nAgents(); i++) {
 			agents.add(new FixedTrajectoryAgent("a"+i, problem.getStart(i), problem.getTarget(i) , problem.getEnvironment(), problem.getBodyRadius(i), trajs[i]));
 		}
 		printSummary(params.summaryPrefix, status, agents, (finishedAtMs - programStartedAtNs)/1000000, params.noOfClusters);
-		
+
 		if (params.activityLogFile != null) {
 			saveActivityLog(activityLog, params.activityLogFile);
-		}		
-		
+		}
+
 		if (!params.showVis) {
 			System.exit(0);
 		}
     }
-    
+
     private static void solveADPP(final EarliestArrivalProblem problem, final boolean avoidStartRegions, final Parameters params) {
         solve(problem, new AgentFactory() {
             @Override
@@ -389,20 +399,20 @@ public class ScenarioCreator {
                     Environment env, DirectedGraph<Point, Line> planningGraph, int agentBodyRadius) {
 
             	Collection<Region> sObst = new LinkedList<>();
-            	
+
                 for (int j=0; j<problem.nAgents(); j++) {
                 	if (j > i && avoidStartRegions) {
                 		sObst.add(new Circle(problem.getStart(j), problem.getBodyRadius(j)));
                 	}
                 }
-            	
+
 				PlanningAgent agent = new ADPPAgent(name, start, target, env, agentBodyRadius, params.maxTime, params.timeStep, sObst);
             	agent.setPlanningGraph(planningGraph);
                 return agent;
             }
         }, TICK_INTERVAL_NS, (long) (params.runtimeDeadlineMs*1e6), params);
     }
-    
+
     private static void solveSDPP(final EarliestArrivalProblem problem, final boolean avoidStartRegions, final Parameters params) {
         solve(problem, new AgentFactory() {
             @Override
@@ -410,13 +420,13 @@ public class ScenarioCreator {
                     Environment env, DirectedGraph<Point, Line> planningGraph, int agentBodyRadius) {
 
             	Collection<Region> sObst = new LinkedList<>();
-            	
+
                 for (int j=0; j<problem.nAgents(); j++) {
                 	if (j > i && avoidStartRegions) {
                 		sObst.add(new Circle(problem.getStart(j), problem.getBodyRadius(j)));
                 	}
                 }
-                
+
 				PlanningAgent agent = new SDPPAgent(name, start, target, env, agentBodyRadius, params.maxTime, params.timeStep, sObst);
             	agent.setPlanningGraph(planningGraph);
                 return agent;
@@ -476,11 +486,11 @@ public class ScenarioCreator {
     }
 
     private static void solve(final EarliestArrivalProblem problem, final AgentFactory agentFactory, final long tickPeriodNs, final long simulateTicksUntilNs, final Parameters params) {
-    	
+
         // Create agents
         final List<Agent> agents = new LinkedList<Agent>();
         for (int i=0; i<problem.getStarts().length; i++) {
-            agents.add(agentFactory.createAgent(            		
+            agents.add(agentFactory.createAgent(
                     "a" + new DecimalFormat("00").format(i),
                     i,
                     problem.getStart(i),
@@ -554,11 +564,11 @@ public class ScenarioCreator {
                     	   concurrentSimulation.clearQueue();
                     	   // We are done!
                     	   printSummary(params.summaryPrefix, agent.hasSucceeded() ? Status.SUCCESS : Status.FAIL, agents, concurrentSimulation.getWallclockRuntime()/1000000, params.noOfClusters);
-                    	   
+
                            if (params.activityLogFile != null) {
                         	   saveActivityLog(concurrentSimulation.getActivityLog(), params.activityLogFile);
                            }
-                    	   
+
                     	   if (!params.showVis) {
                     		   System.exit(0);
                     	   }
@@ -577,7 +587,7 @@ public class ScenarioCreator {
                        return concurrentSimulation;
                    }
                };
-               
+
                concurrentSimulation.addEvent(1, agent.getName(), tickhandler);
            }
 
@@ -600,12 +610,12 @@ public class ScenarioCreator {
     private static void saveActivityLog(Collection<ActivityLogEntry> activityLog, String activityLogFile) {
     	try {
 			File file = new File(activityLogFile);
-			BufferedWriter writer = new BufferedWriter(new FileWriter(file));		
+			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 			writer.write("process;type;start;duration;expstates\n");
-	
+
 	    	for (ActivityLogEntry entry : activityLog) {
-	    		writer.write(entry.processName + ";" + entry.type + ";" + 
-	    				String.format("%.4f", entry.startTime/1000000000f) + ";" +  
+	    		writer.write(entry.processName + ";" + entry.type + ";" +
+	    				String.format("%.4f", entry.startTime/1000000000f) + ";" +
 	    				String.format("%.4f", entry.duration/1000000000f) + ";" +
 	    				entry.expandedStates + "\n");
 	    	}
@@ -615,12 +625,12 @@ public class ScenarioCreator {
 		} finally {
 		}
 	}
-    
+
     enum Status {SUCCESS, FAIL, TIMEOUT}
 
 	private static void printSummary(String prefix, Status status, List<Agent> agents, long timeToConvergeMs, int clusters) {
 
-    	
+
 	    	double cost = 0;
 	    	int msgsSent = 0;
 	    	int totalReplannings = 0;
@@ -628,35 +638,35 @@ public class ScenarioCreator {
 		    	for (Agent agent : agents) {
 					LOGGER.info(agent.getName()
 							+ " cost: "
-							+ (agent.getCurrentTrajectory() != null ? String.format("%.2f", agent.getCurrentTrajectory().getCost()) : "inf") + 
-							" Messages sent: "+ agent.getMessageSentCounter()						
+							+ (agent.getCurrentTrajectory() != null ? String.format("%.2f", agent.getCurrentTrajectory().getCost()) : "inf") +
+							" Messages sent: "+ agent.getMessageSentCounter()
 							);
-					
+
 		    		cost += agent.getCurrentTrajectory() != null ? agent.getCurrentTrajectory().getCost() : 0;
 		    		msgsSent += agent.getMessageSentCounter();
-		    		
+
 		    		if (agent instanceof PlanningAgent) {
 		    			totalReplannings += ((PlanningAgent) agent).replanningCounter;
 		    		}
-		    		
+
 		    	}
 	    	}
-	    	long scenarioSimulationRuntime = System.currentTimeMillis() - startedAt; 
-	    	
-	    	
-	    	System.out.println(prefix + (status == Status.SUCCESS ? String.format("%.2f", cost) : "inf") + ";" + 
-	    			status + ";" + scenarioSimulationRuntime + ";" + 
-	    			timeToConvergeMs + ";" + msgsSent + ";" + 
+	    	long scenarioSimulationRuntime = System.currentTimeMillis() - startedAt;
+
+
+	    	System.out.println(prefix + (status == Status.SUCCESS ? String.format("%.2f", cost) : "inf") + ";" +
+	    			status + ";" + scenarioSimulationRuntime + ";" +
+	    			timeToConvergeMs + ";" + msgsSent + ";" +
 	    			Counters.expandedStatesCounter + ";" + clusters + ";" + totalReplannings);
     }
 
     private static void visualizeAgents(final EarliestArrivalProblem problem, final List<Agent> agents) {
-    	
+
     	 int MAX_TRAJ_DURATION = 5000;
          int agentIndex = 0;
 
          for (final Agent agent: agents) {
-        	 
+
 			 // visualize trajectories
              VisManager.registerLayer(KeyToggleLayer.create("t", true, TrajectoryLayer.create(new TrajectoryProvider<Point>() {
 
@@ -678,56 +688,56 @@ public class ScenarioCreator {
 					}
 					return trajs;
 				}
-				
+
 				@Override
 				public int[] getBodyRadiuses() {
 					int[] radii = new int[problem.nAgents()];
 					int i=0;
 					for (Agent agent : agents) {
 						if (agent.getOccupiedRegion() != null) {
-							radii[i++] = ((MovingCircle)agent.getOccupiedRegion()).getRadius();	
+							radii[i++] = ((MovingCircle)agent.getOccupiedRegion()).getRadius();
 						}
 					}
 					return radii;
 				}
 			}, new ColorProvider() {
-				
+
 				@Override
 				public Color getColor(int i) {
 					return  AgentColors.getColorForAgent(i);
 				}
 			}, TimeParameterHolder.time));
-            
+
             agentIndex++;
         }
     }
-    
+
     private static void visualizeConflicts(final List<Agent> agents) {
-        
+
     	KeyToggleLayer conflictLayerToggle = KeyToggleLayer.create("c", false, RegionsLayer.create(new RegionsProvider() {
-			
+
 			@Override
 			public Collection<? extends Region> getRegions() {
-				
+
 				Collection<MovingCircle> mcs = new LinkedList<MovingCircle>();
-				
+
 				for(Agent agent : agents) {
 					if (agent.getCurrentTrajectory() != null) {
 						mcs.add((MovingCircle) agent.getOccupiedRegion());
 					}
 				}
-				
+
 				return IntersectionChecker.computeAllPairwiseConflicts(mcs, 10);
 			}
 		}, Color.RED));
-    	
+
     	VisManager.registerLayer(conflictLayerToggle);
    }
-    
+
    static private int computeNoOfClusters(EarliestArrivalProblem problem, Parameters params) {
 	   MovingCircle[] mcs = new MovingCircle[problem.nAgents()];
-	   Set<Set<MovingCircle>> clusters = new HashSet<Set<MovingCircle>>(); 
-	   
+	   Set<Set<MovingCircle>> clusters = new HashSet<Set<MovingCircle>>();
+
 	   for (int i = 0; i < mcs.length; i++) {
            Collection<tt.euclid2i.Region> sObst = new LinkedList<tt.euclid2i.Region>();
            Collection<tt.euclidtime3i.Region> dObst = new LinkedList<tt.euclidtime3i.Region>();
@@ -735,14 +745,14 @@ public class ScenarioCreator {
 		   EvaluatedTrajectory traj = BestResponse.computeBestResponse(problem.getStart(i), problem.getTarget(i), problem.getPlanningGraph(), heuristic ,sObst, dObst, params.maxTime, params.timeStep);
 
 		   mcs[i] = new MovingCircle(traj, problem.getBodyRadius(i));
-		   
+
 		   Set<Set<MovingCircle>> conflicting = getConflictingClusters(mcs[i], clusters);
-		   
+
 		   if (conflicting.size() == 0) {
 			   clusters.add(Collections.singleton(mcs[i]));
 		   } else {
 			   assert conflicting.size() > 0;
-			   
+
 			   Set<MovingCircle> joinedCluster = new HashSet<MovingCircle>();
 			   joinedCluster.add(mcs[i]);
 			   // join all clusters
@@ -750,30 +760,30 @@ public class ScenarioCreator {
 				   clusters.remove(conflictingCluster);
 				   joinedCluster.addAll(conflictingCluster);
 			   }
-			   
+
 			   clusters.add(joinedCluster);
 		   }
 	   }
-	   
+
 	   return clusters.size();
    }
 
 
 	static private Set<Set<MovingCircle>> getConflictingClusters(MovingCircle movingCircle, Set<Set<MovingCircle>> clusters) {
-	
-		Set<Set<MovingCircle>> conflictingClusters = new HashSet<Set<MovingCircle>>(); 
+
+		Set<Set<MovingCircle>> conflictingClusters = new HashSet<Set<MovingCircle>>();
 		for (Set<MovingCircle> cluster : clusters) {
-			
+
 			LinkedList<tt.euclidtime3i.Region> regions = new LinkedList<tt.euclidtime3i.Region>();
 			for(MovingCircle mc : cluster) {
 				regions.add(mc);
 			}
-			
+
 			if (IntersectionChecker.intersect(movingCircle, regions)) {
 				conflictingClusters.add(cluster);
 			}
 		}
-		
+
 		return conflictingClusters;
 	}
 

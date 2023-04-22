@@ -62,7 +62,7 @@
 		<repository>
 			<id>atg-repo</id>
 			<name>atg-repo</name>
-			<url>http://jones.felk.cvut.cz/artifactory/repo</url>
+			<url>https://jones.felk.cvut.cz/artifactory/repo</url>
 			<snapshots>
 				<updatePolicy>always</updatePolicy>
 			</snapshots>
