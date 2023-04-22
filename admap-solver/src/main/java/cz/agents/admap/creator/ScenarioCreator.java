@@ -140,6 +140,10 @@ public class ScenarioCreator {
 		boolean agentsRemote = Args.isArgumentSet(args, "-agentsRemote");
 
 		File file = new File(xml);
+		if(!file.exists()) {
+			LOGGER.info("Did not find problem file using the direct path. Will add prefix");
+			file = new File("project/adpp-journal/instances/" + xml);
+		}
 	    params.fileName = file.getName();
 
 	    // Load the PNG image as a background, if provided
