@@ -43,7 +43,7 @@ import tt.euclidtime3i.ShortestPathHeuristic;
 import tt.euclidtime3i.region.MovingCircle;
 import tt.euclidtime3i.util.IntersectionChecker;
 import tt.jointeuclid2ni.probleminstance.EarliestArrivalProblem;
-import tt.jointeuclid2ni.probleminstance.EarliestArrivalProblemXMLDeserializer;
+import tt.jointeuclid2ni.probleminstance.TrajectoryCoordinationProblemXMLDeserializer;
 import tt.jointeuclid2ni.probleminstance.VisUtil;
 import tt.jointeuclid2ni.solver.Parameters;
 import tt.util.AgentColors;
@@ -155,7 +155,7 @@ public class ScenarioCreator {
         }
 
 	    try {
-			problem = EarliestArrivalProblemXMLDeserializer.deserialize(new FileInputStream(file));
+			problem = TrajectoryCoordinationProblemXMLDeserializer.deserialize(new FileInputStream(file));
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
@@ -201,7 +201,7 @@ public class ScenarioCreator {
 
         if (params.showVis) {
             VisUtil.initVisualization(problem, "Trajectory Tools ("+method.toString()+")", params.bgImageFile, params.timeStep/2);
-            VisUtil.visualizeProblem(problem);
+            VisUtil.visualizeEarliestArrivalProblem(problem);
         }
 
         switch (method) {
