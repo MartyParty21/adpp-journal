@@ -166,7 +166,7 @@ public class ScenarioCreator {
 	    LOGGER.debug("Number of clusters: " + params.noOfClusters);
 
 	    params.runtimeDeadlineMs = 3600*1000; /* default timeout is 1 hour */
-	    if (timeoutStr != null) {
+	    if (timeoutStr != null && !agentsRemote) {
 	    	int timeout = Integer.parseInt(timeoutStr);
 	    	params.runtimeDeadlineMs = timeout;
 	    	killAt(System.currentTimeMillis() + timeout, params.summaryPrefix, params.noOfClusters);

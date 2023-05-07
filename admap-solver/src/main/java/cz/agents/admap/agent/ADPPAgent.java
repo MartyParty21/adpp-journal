@@ -36,7 +36,7 @@ public class ADPPAgent extends DPPAgent {
     }
 
 	@Override
-	protected void notify(Message message) {
+	public void notify(Message message) {
 		if (!globalTerminationDetected) {		
 			super.notify(message);
 			

@@ -2,47 +2,50 @@ package cz.agents.alite.communication;
 
 import cz.agents.alite.communication.content.Content;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Communicator set to delegate all the work regarding communication channel and message passing to external listener
  */
 public class ExternalCommunicator implements Communicator {
-    private final MessageHandler sender;
+    private final MessageHandler senderHandler;
 
-    public ExternalCommunicator(MessageHandler sender) {
-        this.sender = sender;
+    private final int id;
+
+    private int messageCount;
+
+    public ExternalCommunicator(MessageHandler senderHandler, int id) {
+        this.senderHandler = senderHandler;
+        this.id = id;
+        this.messageCount = 0;
     }
 
     @Override
     public Message createMessage(Content content) {
-        return null;
+        return new Message(String.valueOf(id), content, messageCount++);
     }
 
     @Override
     public Message createReply(Message message, Content content) {
-        return null;
+        return new Message(String.valueOf(id), content, message.getId());
     }
 
     @Override
     public void addMessageHandler(MessageHandler messageHandler) {
-
+        // Not used for external communicator
     }
 
     @Override
     public void removeMessageHandler(MessageHandler messageHandler) {
-
+        // Not used for external communicator
     }
 
     @Override
     public void receiveMessage(Message message) {
-
+        // Not used for external communicator
     }
 
     @Override
     public void sendMessage(Message message) {
-
+        senderHandler.notify(message);
     }
 
     @Override
