@@ -664,7 +664,7 @@ public class ScenarioCreator {
 	    			Counters.expandedStatesCounter + ";" + clusters + ";" + totalReplannings);
     }
 
-    private static void visualizeAgents(final EarliestArrivalProblem problem, final List<Agent> agents) {
+    public static void visualizeAgents(final EarliestArrivalProblem problem, final List<Agent> agents) {
 
     	 int MAX_TRAJ_DURATION = 5000;
          int agentIndex = 0;
@@ -716,7 +716,7 @@ public class ScenarioCreator {
         }
     }
 
-    private static void visualizeConflicts(final List<Agent> agents) {
+    public static void visualizeConflicts(final List<Agent> agents) {
 
     	KeyToggleLayer conflictLayerToggle = KeyToggleLayer.create("c", false, RegionsLayer.create(new RegionsProvider() {
 
