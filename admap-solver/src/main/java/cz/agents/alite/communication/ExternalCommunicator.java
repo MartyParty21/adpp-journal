@@ -5,7 +5,7 @@ import cz.agents.alite.communication.content.Content;
 /**
  * Communicator set to delegate all the work regarding communication channel and message passing to external listener
  */
-public class ExternalCommunicator implements Communicator {
+public class ExternalCommunicator extends InboxBasedCommunicator {
     private final MessageHandler senderHandler;
 
     private final int id;
@@ -13,6 +13,7 @@ public class ExternalCommunicator implements Communicator {
     private int messageCount;
 
     public ExternalCommunicator(MessageHandler senderHandler, int id) {
+        super(String.valueOf(id));
         this.senderHandler = senderHandler;
         this.id = id;
         this.messageCount = 0;
@@ -55,5 +56,10 @@ public class ExternalCommunicator implements Communicator {
 
     public static Message createMessageFromPicoMessage(String sender, Content content, long id) {
         return new Message(sender, content, id);
+    }
+
+    @Override
+    public int getInboxSize() {
+        return 0;
     }
 }
