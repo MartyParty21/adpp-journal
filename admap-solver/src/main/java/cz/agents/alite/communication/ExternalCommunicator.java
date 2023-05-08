@@ -42,7 +42,7 @@ public class ExternalCommunicator implements Communicator {
     public void receiveMessage(Message message) {
         // Not used for external communicator
     }
-
+    
     @Override
     public void sendMessage(Message message) {
         senderHandler.notify(message);
@@ -51,5 +51,9 @@ public class ExternalCommunicator implements Communicator {
     @Override
     public String getAddress() {
         return null;
+    }
+
+    public static Message createMessageFromPicoMessage(String sender, Content content, long id) {
+        return new Message(sender, content, id);
     }
 }
