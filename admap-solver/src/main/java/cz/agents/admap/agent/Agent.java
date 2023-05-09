@@ -59,6 +59,8 @@ public abstract class Agent {
 
     public abstract EvaluatedTrajectory getCurrentTrajectory();
 
+    public void setCurrentTrajectory(EvaluatedTrajectory trajectory) {};
+
     public tt.euclidtime3i.Region getOccupiedRegion() {
         if (getCurrentTrajectory() != null) {
             return new tt.euclidtime3i.region.MovingCircle(getCurrentTrajectory(), agentBodyRadius);

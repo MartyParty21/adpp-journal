@@ -72,6 +72,11 @@ public abstract class DPPAgent extends PlanningAgent {
         return trajectory;
     }
 
+	@Override
+	public void setCurrentTrajectory(EvaluatedTrajectory trajectory) {
+		this.trajectory = trajectory;
+	}
+
 	protected void broadcastNewTrajectory(EvaluatedTrajectory newTrajectory, int targetReachedTime) {
 		this.infromNewTrajectorySentCounter++;
     	broadcast(new InformNewTrajectory(getName(), new CircleMovingToTarget(newTrajectory, agentBodyRadius, targetReachedTime)));
