@@ -1,12 +1,7 @@
 package cz.agents.admap.creator;
 import java.awt.Color;
 import java.awt.image.ReplicateScaleFilter;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -111,13 +106,30 @@ public class ScenarioCreator {
         ORCA}
 
 
-    private static EarliestArrivalProblem problem;
+    private static EarliestArrivalProblem problem = null;
 
     public static EarliestArrivalProblem getProblem() {
         return problem;
     }
 
-    private static final long TICK_INTERVAL_NS = 100 /*ms*/ * 1000000;
+	private static File problemFile = null;
+
+	private static String problemString = null;
+
+	public static String getProblemString() {
+		return problemString;
+	}
+
+	public static void setProblemString(String problemString) {
+		ScenarioCreator.problemString = problemString;
+	}
+
+	public static File getProblemFile() {
+		return problemFile;
+	}
+
+	private static final long TICK_INTERVAL_NS = 100 /*ms*/ * 1000000;
+
 
     public static Parameters createFromArgs(String[] args) {
     	startedAt = System.currentTimeMillis();
@@ -144,7 +156,11 @@ public class ScenarioCreator {
 			LOGGER.info("Did not find problem file using the direct path. Will add prefix");
 			file = new File("project/adpp-journal/instances/" + xml);
 		}
-	    params.fileName = file.getName();
+		if(file.exists()) {
+			problemFile = file;
+			params.fileName = file.getName();
+		}
+
 
 	    // Load the PNG image as a background, if provided
 	    if (bgImgFileName != null) {
@@ -155,7 +171,11 @@ public class ScenarioCreator {
         }
 
 	    try {
-			problem = TrajectoryCoordinationProblemXMLDeserializer.deserialize(new FileInputStream(file));
+			if (problemString != null) {
+				problem = TrajectoryCoordinationProblemXMLDeserializer.deserialize(new ByteArrayInputStream(problemString.getBytes()));
+			} else {
+				problem = TrajectoryCoordinationProblemXMLDeserializer.deserialize(new FileInputStream(file));
+			}
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
