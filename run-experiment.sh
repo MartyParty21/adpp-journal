@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # how many CPU cores will be used to run the experiment?
-CPUS=4
+CPUS=8
 
 # how many instances will be generated for each data point (i.e. for each number of robots in each instanceset)
-N=50
+N=4
 
 # list of environments
 ENVS="empty-hall-r22 empty-hall-r22-docks ubremen-r27 ubremen-r27-docks warehouse-r25 warehouse-r25-docks"
