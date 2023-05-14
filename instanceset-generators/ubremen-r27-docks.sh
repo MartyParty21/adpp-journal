@@ -17,7 +17,7 @@ instance=0
 
 for radius in "27"
 do  
-    for nagents in "1" "2" "5" "10" "12" "15" "20" "25" "30" "35"
+    for nagents in "1" "2" "3" "4" "5" #"10" "12" "15" "20" "25" "30" "35"
     do        
         for seed in $(seq 1 $1)
         do
@@ -27,14 +27,14 @@ do
 		    timestep=$radius
 
 	        ## ConflictGenerator
-	        java -XX:+UseSerialGC -cp solver.jar -Dlog4j.configuration="file:$PWD/log4j.custom" tt.jointeuclid2ni.probleminstance.generator.GenerateInstance -env $denvxml -nagents $nagents -radius $radius -seed $seed -outfile $instancefile -sgnooverlap
+	        java -XX:+UseSerialGC -cp solver.jar -Dlog4j.configuration="file:$PWD/log4j.custom" tt.jointeuclid2ni.probleminstance.generator.GenerateEAInstance -env $denvxml -nagents $nagents -radius $radius -seed $seed -outfile $instancefile -sgnooverlap
 
 	        # add instance to data.in
-	        for alg in "PP" "RPP" "ADPP" "ADRPP" "SDPP" "SDRPP" "ORCA" "BASEST"
+	        for alg in "ADPP"
 	        do
     			activitylog=""
 			
-			    summaryprefix="$envname;$instance;$nagents;$radius;$seed;$maxtime;$alg;"
+			    summaryprefix="$denvname;$instance;$nagents;$radius;$seed;$maxtime;$alg;"
 		        echo -method $alg -problemfile $instancefile -maxtime $maxtime -timestep $timestep -timeout $timeout -summary -summaryprefix "$summaryprefix" $activitylog >> $instancefolder/data.in           
 	        done
 
