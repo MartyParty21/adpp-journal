@@ -14,21 +14,4 @@ do
     # add head row to the generated csv file
     cat "instances/$ENV/head" > "instances/$ENV/data.out.head"
     cat "instances/$ENV/data.out" >> "instances/$ENV/data.out.head"
-
-    # run R script to generate the plots
-    Rscript make-plots.r $ENV
-
-    echo "-------------------------------------------------------"
-    echo " PDF with plot has been generated to file plots/$ENV.pdf"
-    echo "-------------------------------------------------------"
 done
-
-echo "----------------------------------------------------------"
-echo " Done! Plots have been generated to plots/ directory."
-echo "-----------------------------------------------------------"
-
-
-
-
-
-

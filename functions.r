@@ -18,30 +18,14 @@ get.color <- function(algs) {
   for (alg in algs) {
     if (is.na(alg)) {
       pal <- c(pal, "#888888")
-    } 
-    
-    else if (alg == "PP") {
-      pal <- c(pal, "firebrick3")
-    } else if (alg == "RPP") {
-      pal <- c(pal, "firebrick1")
-    } 
-    
-    else if (alg == "SDPP") {
-      pal <- c(pal, "deepskyblue3")
-    } else if (alg == "SDRPP") {
-      pal <- c(pal, "deepskyblue1")
-    } 
-    
-    else if (alg == "ADPP") {
+    }
+
+    else if (alg == "ADPP-1Core") {
       pal <- c(pal, "springgreen3")
-    } else if (alg == "ADRPP") {
-      pal <- c(pal, "springgreen1")
-    } 
-    
-    else if (alg == "ORCA"){
-      pal <- c(pal, "pink2")
-    } else {
-      pal <- c(pal, "#222222")
+    } else if (alg == "ADPP-8Core") {
+      pal <- c(pal, "pink")
+    } else if (alg == "ADPP-Distributed") {
+      pal <- c(pal, "deepskyblue1")
     }
   }
   return(pal)
@@ -52,30 +36,13 @@ get.shape <- function(algs) {
   for (alg in algs) {
     if (is.na(alg)) {
       pal <- c(pal, 7)
-    } 
-    
-    else if (alg == "PP") {
-      pal <- c(pal, 16)
-    } else if (alg == "RPP") {
-      pal <- c(pal, 21)
-    } 
-    
-    else if (alg == "SDPP") {
-      pal <- c(pal, 17)
-    } else if (alg == "SDRPP") {
-      pal <- c(pal, 24)
-    } 
-    
-    else if (alg == "ADPP") {
-      pal <- c(pal, 15)
-    } else if (alg == "ADRPP") {
+    }
+    else if (alg == "ADPP-1Core") {
+      pal <- c(pal, 12)
+    } else if (alg == "ADPP-8Core") {
       pal <- c(pal, 22)
-    } 
-    
-    else if (alg == "ORCA"){
-      pal <- c(pal, 8)
-    } else {
-      pal <- c(pal, 5)
+    } else if (alg == "ADPP-Distributed") {
+      pal <- c(pal, 25)
     }
   }
   return(pal)
@@ -86,9 +53,7 @@ get.linetype <- function(algs) {
   for (alg in algs) {
     if (is.na(alg)) {
       pal <- c(pal, "twodash")
-    } else if (alg == "PP" | alg == "SDPP" | alg == "ADPP") {
-      pal <- c(pal, "solid")
-    } else if (alg == "RPP" | alg == "SDRPP" | alg == "ADRPP") {
+    } else if (alg == "ADPP-1Core" | alg == "ADPP-8Core" | alg == "ADPP-Distributed") {
       pal <- c(pal, "solid")
     } else {
       pal <- c(pal, "dashed")
@@ -174,12 +139,8 @@ runtime.vs.nagents <- function(runs, min.instances, maxagents) {
 
 speedup.vs.nagents <- function(runs, min.instances, maxagents) {
   x <-runs
-  for (alg in c("PP", "ADPP","SDPP")) {
-    x$speedup[x$alg==alg] <- 1/(x[x$alg==alg, "time"]/x[x$alg=="PP", "time"])
-  }
-  
-  for (alg in c("RPP","ADRPP","SDRPP")) {
-    x$speedup[x$alg==alg] <- 1/(x[x$alg==alg, "time"]/x[x$alg=="RPP", "time"])
+  for (alg in c("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")) {
+    x$speedup[x$alg==alg] <- 1/(x[x$alg==alg, "time"]/x[x$alg=="ADPP-1Core", "time"])
   }
   
   # summarize
@@ -204,7 +165,7 @@ speedup.vs.nagents <- function(runs, min.instances, maxagents) {
     geom_point(size=4, fill="white", position=pd)+   
     #geom_point(aes(y=med), size=3, shape=18, position=pd)+   
     #geom_text(aes(label=N, y=0, size=2), colour="black") + 
-    scale_y_continuous(limits=c(0,maxy), name="avg. speed-up rel. to PP/RPP [-]") + 
+    scale_y_continuous(limits=c(0,maxy), name="avg. speed-up rel. to 1 Core ADPP [-]") +
     scale_x_continuous(limits=c(0, maxagents+3), name="number of robots [-]") + 
     geom_hline(yintercept = 1, linetype = "longdash", colour="black", alpha=0.5) + 
     
@@ -212,7 +173,7 @@ speedup.vs.nagents <- function(runs, min.instances, maxagents) {
     scale_linetype_manual(values=get.linetype(unique(speedup.sum$alg)), name="method") +
     scale_shape_manual(values=get.shape(unique(speedup.sum$alg)), name="method") +
     theme_bw() +
-    ggtitle("4: Avg. speed-up rel. to centralized impl.")
+    ggtitle("4: Avg. speed-up rel. to single-core.")
   
   return(plot)
 }
@@ -230,7 +191,7 @@ replans.per.agent.vs.nagents <- function(runs, min.instances, maxagents) {
   
   exp.sum <- exp.sum[exp.sum$N >= min.instances, ]
   
-  plot <- ggplot(exp.sum[exp.sum$alg != "CPP",], aes(x=nagents, y=mean, color=alg, shape=alg, linetype=alg))+
+  plot <- ggplot(exp.sum[], aes(x=nagents, y=mean, color=alg, shape=alg, linetype=alg))+
     geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=2, position=pd, size=0.5, alpha=0.5) +
     geom_line(size=1, position=pd)+ 
     geom_point(size=4, position=pd, fill="white")+   
@@ -254,12 +215,12 @@ prolong.vs.nagents <- function(runs, min.instances, maxagents) {
   x <- runs
   
   for (alg in unique(runs$alg)) {
-    x$prolong[x$alg==alg] <- 100*((x[x$alg==alg, "cost"]-x[x$alg=="BASEST", "cost"])/x[x$alg=="BASEST", "cost"])
+    x$prolong[x$alg==alg] <- 100*((x[x$alg==alg, "cost"]-x[x$alg=="ADPP-1Core", "cost"])/x[x$alg=="ADPP-1Core", "cost"])
   }
   
   # summarize
   
-  prolong.sum <- ddply(x[x$alg != "BASEST",], .(nagents, alg), summarise,  
+  prolong.sum <- ddply(x[x$alg != "ADPP-1Core"], .(nagents, alg), summarise,
                        N = sum(!is.na(prolong)),
                        mean = mean(prolong, na.rm=TRUE),
                        med = median(prolong, na.rm=TRUE),
@@ -301,44 +262,39 @@ make.grid.plot <- function(env, plotsdir, min.instances.for.summary) {
   runs$agents.in.cluster <- runs$nagents/runs$clusters
   runs$agents.in.cluster.ceil <- ceiling(runs$nagents/runs$clusters)
   runs$replans.per.agent <- runs$replans / runs$nagents
-  runs$expansions.per.replan <- runs$expansions/runs$replans 
-  runs$time[runs$alg=="ORCA"] <- NA
+  runs$expansions.per.replan <- runs$expansions/runs$replans
   
   maxagents <- max(runs$nagents)
   
-  runs$alg = factor(runs$alg,levels=c("PP", "RPP", "SDPP", "SDRPP", "ADPP",  "ADRPP", "ORCA", "BASEST"))
+  runs$alg = factor(runs$alg,levels=c("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed"))
   
   runs$alg.scheme <- NA
-  runs$alg.scheme[runs$alg=="PP" | runs$alg=="RPP"] <- "C" 
-  runs$alg.scheme[runs$alg=="ADPP" | runs$alg=="ADRPP"] <- "AD"
-  runs$alg.scheme[runs$alg=="SDPP" | runs$alg=="SDRPP"] <- "SD"
-  runs$alg.scheme[runs$alg=="ORCA"] <- "ORCA"
+  runs$alg.scheme[runs$alg=="ADPP-1Core" | runs$alg=="ADPP-8Core" | runs$alg=="ADPP-Distributed"] <- "AD"
   
   runs$alg.ppvar <- "NA"
-  runs$alg.ppvar[runs$alg=="PP" | runs$alg=="ADPP" | runs$alg=="SDPP"] <- "PP" 
-  runs$alg.ppvar[runs$alg=="RPP" | runs$alg=="ADRPP" | runs$alg=="SDRPP"] <- "RPP"
+  runs$alg.ppvar[runs$alg=="ADPP-1Core" | runs$alg=="ADPP-8Core" | runs$alg=="ADPP-Distributed"] <- "PP"
   
   success <- 
-    succ.nagents(runs[is.element(runs$alg,.("PP", "RPP", "SDPP", "SDRPP", "ADPP", "ADRPP", "ORCA")),], Inf, maxagents)
+    succ.nagents(runs[is.element(runs$alg,.("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")),], Inf, maxagents)
   
   runtime <-
-    runtime.vs.nagents(common.runs(runs, .("PP","RPP","ADPP","ADRPP", "SDPP", "SDRPP")), min.instances.for.summary, maxagents)
+    runtime.vs.nagents(common.runs(runs, .("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
   
   speedup <-
-    speedup.vs.nagents(common.runs(runs, .("PP","RPP","ADPP","ADRPP", "SDPP", "SDRPP")), min.instances.for.summary, maxagents)
+    speedup.vs.nagents(common.runs(runs, .("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
   
   replans <-
-    replans.per.agent.vs.nagents(common.runs(runs, .("ADPP", "ADRPP", "SDPP", "SDRPP")), min.instances.for.summary, maxagents)
-  
-  prolong <-
-    prolong.vs.nagents(common.runs(runs, .("PP","RPP","ADPP","ADRPP", "SDPP", "SDRPP", "BASEST")), min.instances.for.summary, maxagents)
+    replans.per.agent.vs.nagents(common.runs(runs, .("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+#
+#   prolong <-
+#     prolong.vs.nagents(common.runs(runs, .("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
   
   
   ggsave(filename=paste(plotsdir, env,"-success.pdf", sep=""), plot=success, width=8, height=5)
   ggsave(filename=paste(plotsdir, env,"-runtime.pdf", sep=""), plot=runtime, width=8, height=5)
   ggsave(filename=paste(plotsdir, env,"-speedup.pdf", sep=""), plot=speedup, width=8, height=5)
   ggsave(filename=paste(plotsdir, env,"-replans.pdf", sep=""), plot=replans, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-prolong.pdf", sep=""), plot=prolong, width=8, height=5)
+#   ggsave(filename=paste(plotsdir, env,"-prolong.pdf", sep=""), plot=prolong, width=8, height=5)
   
   # create a table of individual plots...
   
@@ -354,7 +310,7 @@ make.grid.plot <- function(env, plotsdir, min.instances.for.summary) {
   
   grid.plots <- arrangeGrob(
     success + theme(legend.position="none"), 
-    prolong + theme(legend.position="none"),
+#     prolong + theme(legend.position="none"),
     runtime + theme(legend.position="none"),
     speedup + theme(legend.position="none"),
     replans + theme(legend.position="none"),     

@@ -16,7 +16,7 @@ cp $0 $instancefolder/
 instance=0
 radius=25
  
-for nagents in "1" "2" "3" "4" "5" #"10" "12" "15" "20" "25" "30" "35" "40" "45" "48"
+for nagents in "1" "2" "3" "5" "7" "9" "10" "12" "15" #"20" "25" "30" "35" "40" "45" "48"
 do        
     for seed in $(seq 1 $1)
     do
@@ -33,7 +33,7 @@ do
         do
     		activitylog=""
 		
-		    summaryprefix="$denvname;$instance;$nagents;$radius;$seed;$maxtime;$alg;"
+		    summaryprefix="$denvname;$instance;$nagents;$radius;$seed;$maxtime;$alg$2;"
 	        echo -method $alg -problemfile $instancefile -maxtime $maxtime -timestep $timestep -timeout $timeout -summary -summaryprefix "$summaryprefix" $activitylog >> $instancefolder/data.in           
         done
 
@@ -43,5 +43,5 @@ do
  done
 
 
-echo "env;instance;nagents;radius;seed;maxtime;alg;cost;status;simtime;time;msgs;expansions;clusters;replans" > $instancefolder/head
+echo "env;instance;nagents;radius;seed;maxtime;alg;cost;status;simtime;time;msgs;expansions;clusters;replans;planningTime" > $instancefolder/head
 mkdir $instancefolder/figs

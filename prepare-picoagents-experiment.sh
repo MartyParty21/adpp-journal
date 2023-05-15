@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # how many instances will be generated for each data point (i.e. for each number of robots in each instanceset)
-N=4
+N=20
+
+SUFFIX="-Distributed"
 
 # list of environments
 ENVS="empty-hall-r22-docks warehouse-r25-docks ubremen-r27-docks "
@@ -21,7 +23,7 @@ do
     echo "-------------------------------------------------------"
 
     # generate N random instances for each number of robots
-    instanceset-generators/$ENV.sh $N
+    instanceset-generators/$ENV.sh $N $SUFFIX
 
 done
 
