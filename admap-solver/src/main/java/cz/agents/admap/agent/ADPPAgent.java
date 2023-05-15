@@ -15,25 +15,29 @@ import tt.euclidtime3i.Region;
 public class ADPPAgent extends DPPAgent {
 
 	static final Logger LOGGER = Logger.getLogger(ADPPAgent.class);
-	private boolean agentFinished = false;
+	private volatile boolean agentFinished = false;
+
+	private volatile boolean agentRunning;
 
     public ADPPAgent(String name, Point start, Point goal, Environment environment, int agentBodyRadius, int maxTime, int waitMoveDuration, Collection<tt.euclid2i.Region> sObst) {
         super(name, start, goal, environment, agentBodyRadius, maxTime, waitMoveDuration, sObst);
+		agentRunning = false;
     }
     
     @Override
     public void start() {
     	if (isHighestPriority()) {
-    		higherPriorityAgentsFinished = true;
-    		agentViewDirty = false;
-    	}
+			higherPriorityAgentsFinished = true;
+			agentViewDirty = false;
+		}
 
-    	assertConsistentTrajectory();
-    	
-    	if (isLowestPriority() && higherPriorityAgentsFinished && trajectory != null) {
-    		setGlobalTerminationDetected(true);
-    	}
-    }
+		assertConsistentTrajectory();
+
+		if (isLowestPriority() && higherPriorityAgentsFinished && trajectory != null) {
+			setGlobalTerminationDetected(true);
+		}
+		agentRunning = true;
+	}
 
 	@Override
 	public void notify(Message message) {
@@ -89,5 +93,7 @@ public class ADPPAgent extends DPPAgent {
 		}
 	}
 
-    
+	public boolean isAgentRunning() {
+		return agentRunning;
+	}
 }

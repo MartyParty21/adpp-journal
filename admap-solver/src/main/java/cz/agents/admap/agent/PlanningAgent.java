@@ -37,12 +37,19 @@ public abstract class PlanningAgent extends Agent {
 	public int replanningCounter = 0;
 
 	private HeuristicToGoal<tt.euclidtime3i.Point> heuristic;
+
+	private long totalTimePlanning;
 	
 	public PlanningAgent(String name, Point start, Point goal,
 			Environment environment, int agentBodyRadius, int maxTime, int waitMoveDuration) {
 		super(name, start, goal, environment, agentBodyRadius);
 		this.maxTime = maxTime;
 		this.waitMoveDuration = waitMoveDuration;
+		this.totalTimePlanning = 0;
+	}
+
+	public long getTotalTimePlanning() {
+		return totalTimePlanning;
 	}
 
 	protected EvaluatedTrajectory getBestResponseTrajectory(
@@ -75,7 +82,9 @@ public abstract class PlanningAgent extends Agent {
     		traj = BestResponse.computeBestResponse(start, goal, inflatedObstacles, environment.getBoundary().getBoundingBox(), sObstInflated, dObstInflated, maxTime, waitMoveDuration);
     	}
 
-		LOGGER.debug(getName() + " finished planning in " + (System.currentTimeMillis() - startedAt) + "ms");
+		long planningTime = System.currentTimeMillis() - startedAt;
+		totalTimePlanning += planningTime;
+		LOGGER.debug(getName() + " finished planning in " + planningTime + "ms");
 		return traj;
 	}
 	
