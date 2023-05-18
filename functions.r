@@ -24,6 +24,10 @@ get.color <- function(algs) {
     }
     else if (alg == "ADPP-1Core") {
       pal <- c(pal, "springgreen3")
+    } else if (alg == "ADPP-4Core") {
+      pal <- c(pal, "brown")
+    } else if (alg == "ADPP-7Core") {
+      pal <- c(pal, "magenta")
     } else if (alg == "ADPP-8Core") {
       pal <- c(pal, "firebrick3")
     } else if (alg == "ADPP-Distributed") {
@@ -43,7 +47,11 @@ get.shape <- function(algs) {
     }
     else if (alg == "ADPP-1Core") {
       pal <- c(pal, 12)
-    } else if (alg == "ADPP-8Core") {
+    } else if (alg == "ADPP-4Core") {
+      pal <- c(pal, 2)
+    } else if (alg == "ADPP-7Core") {
+      pal <- c(pal, 5)
+    }else if (alg == "ADPP-8Core") {
       pal <- c(pal, 22)
     } else if (alg == "ADPP-Distributed") {
       pal <- c(pal, 17)
@@ -57,7 +65,7 @@ get.linetype <- function(algs) {
   for (alg in algs) {
     if (is.na(alg)) {
       pal <- c(pal, "twodash")
-    } else if (alg == "ADPP-singleProcess" | alg == "ADPP-1Core" | alg == "ADPP-8Core" | alg == "ADPP-Distributed") {
+    } else if (alg == "ADPP-singleProcess" | alg == "ADPP-1Core" | alg == "ADPP-4Core" | alg == "ADPP-7Core" | alg == "ADPP-8Core" | alg == "ADPP-Distributed") {
       pal <- c(pal, "solid")
     } else {
       pal <- c(pal, "dashed")
@@ -86,24 +94,24 @@ common.runs <- function(runs, algs) {
 ### success rate ####
 succ.nagents <- function(runs, timelimit, maxagents) {
   x <- runs[!is.na(runs$time) && runs$time<timelimit, ]
-  succ <- ddply(x, .(nagents, alg, radius), summarise,  
+  succ <- ddply(x, .(nagents, alg, radius), summarise,
                 solved = sum(is.finite(cost)),
                 total = length(unique(instance))
   )
-  
+
   plot <- ggplot(succ, aes(x=nagents, y=(solved/total)*100, color=alg, linetype=alg))+
-    geom_line(size=1, position=pd)+ 
-    geom_point(aes(shape=alg), position=pd, size=4, fill="white") + 
+    geom_line(size=1, position=pd)+
+    geom_point(aes(shape=alg), position=pd, size=4, fill="white") +
     scale_y_continuous(limits=c(0,100), name=paste("instances solved [%]")) +
     scale_x_continuous(limits=c(0,maxagents+3), name="number of robots [-]") +
     scale_color_manual(values=get.color(unique(succ$alg)), name="method") +
     scale_linetype_manual(values=get.linetype(unique(succ$alg)), name="method") +
     scale_shape_manual(values=get.shape(unique(succ$alg)), name="method") +
-    theme_bw() + 
+    theme_bw() +
     theme(legend.position = "bottom", legend.direction = "horizontal") +
     ggtitle("Coverage") #ggtitle(paste("1: Coverage (", max(succ$total),"instances)"))
-  
-  return(plot)  
+
+  return(plot)
 }
 
 ### runtime ###
@@ -143,7 +151,7 @@ runtime.vs.nagents <- function(runs, min.instances, maxagents) {
 
 speedup.vs.nagents <- function(runs, min.instances, maxagents) {
   x <-runs
-  for (alg in c("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")) {
+  for (alg in c("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core", "ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")) {
     x$speedup[x$alg==alg] <- 1/(x[x$alg==alg, "time"]/x[x$alg=="ADPP-singleProcess", "time"])
   }
   
@@ -279,86 +287,6 @@ noPlanTime.per.agent.vs.nagents <- function(runs, min.instances, maxagents) {
   return(plot)
 }
 
-### runtime without computation time ###
-
-runtime.vs.nagents.norm <- function(runs, min.instances, maxagents) {
-  x <- runs
-  for (alg in c("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")) {
-    x$timeNorm[x$alg==alg] <- x[x$alg==alg, "time"] - x[x$alg==alg, "planningTime.per.agent"] + x[x$alg=="ADPP-singleProcess", "planningTime.per.agent"]
-  }
-  time.sum <- ddply(runs, .(nagents, alg, radius), summarise,
-                    N = sum(!is.na(timeNorm)),
-                    mean = mean(timeNorm),
-                    med = median(timeNorm),
-                    sd = sd(timeNorm),
-                    se = sd / sqrt(N),
-                    min = min(timeNorm),
-                    max = max(timeNorm))
-  time.sum <- time.sum[time.sum$N >= min.instances, ]
-
-  plot <- ggplot(time.sum, aes(x=nagents, y=mean/1000, color=alg, linetype=alg, shape=alg))+
-    geom_errorbar(aes(ymin=(mean-se)/1000, ymax=(mean+se)/1000), width=2, position=pd, size=0.5, alpha=0.5) +
-    #geom_errorbar(aes(ymin=(mean-sd)/1000, ymax=(mean+sd)/1000), width=0.1, position=pd, size=2, alpha=1) +
-    geom_line(size=1, position=pd)+
-    geom_point(size=4, position=pd, fill="white")+
-    #geom_text(aes(label=N, y=0, size=2), colour="black") +
-
-    scale_color_manual(values=get.color(unique(time.sum$alg)), name="method") +
-    scale_linetype_manual(values=get.linetype(unique(time.sum$alg)), name="method") +
-    scale_shape_manual(values=get.shape(unique(time.sum$alg)), name="method") +
-
-    scale_y_continuous(name="time to converge [s]") +
-    scale_x_continuous(limits=c(0,maxagents+3), name="no of robots [-]") +
-
-    theme_bw() +
-    ggtitle("Runtime with normalized ")
-
-  return(plot)
-}
-
-## speedup ~ no of agents without computation time ##
-
-speedup.vs.nagents.norm <- function(runs, min.instances, maxagents) {
-  x <-runs
-  for (alg in c("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")) {
-    x$speedup[x$alg==alg] <- 1/(x[x$alg==alg, "time"]/x[x$alg=="ADPP-1Core", "time"])
-  }
-
-  # summarize
-
-  speedup.sum <- ddply(x, .(nagents, alg, radius),
-                       summarise,
-                       N = sum(!is.na(speedup)),
-                       mean = mean(speedup),
-                       med = median(speedup),
-                       sd = sd(speedup),
-                       se = sd / sqrt(N),
-                       min = min(speedup),
-                       max = max(speedup))
-
-  speedup.sum <- speedup.sum[speedup.sum$N >= min.instances, ]
-
-  maxy <- max(speedup.sum$mean+speedup.sum$se, na.rm=TRUE)
-  plot <- ggplot(speedup.sum, aes(x=nagents, y=mean, color=alg, shape=alg, linetype=alg))+
-    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=2, position=pd, size=0.5, alpha=0.5) +
-    #geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=0, position=pd, size=2, alpha=0.7) +
-    geom_line(size=1, position=pd)+
-    geom_point(size=4, fill="white", position=pd)+
-    #geom_point(aes(y=med), size=3, shape=18, position=pd)+
-    #geom_text(aes(label=N, y=0, size=2), colour="black") +
-    scale_y_continuous(limits=c(0,maxy), name="avg. speed-up rel. to 1 Core ADPP [-]") +
-    scale_x_continuous(limits=c(0, maxagents+3), name="number of robots [-]") +
-    geom_hline(yintercept = 1, linetype = "longdash", colour="black", alpha=0.5) +
-
-    scale_color_manual(values=get.color(unique(speedup.sum$alg)), name="method") +
-    scale_linetype_manual(values=get.linetype(unique(speedup.sum$alg)), name="method") +
-    scale_shape_manual(values=get.shape(unique(speedup.sum$alg)), name="method") +
-    theme_bw() +
-    ggtitle("4: Avg. speed-up rel. to single-core.")
-
-  return(plot)
-}
-
 
 ## replans vs. no of agents ##
 
@@ -455,42 +383,35 @@ make.grid.plot <- function(env, plotsdir, min.instances.for.summary) {
 
   maxagents <- max(runs$nagents)
   
-  runs$alg = factor(runs$alg,levels=c("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed"))
-  
+  runs$alg = factor(runs$alg,levels=c("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core", "ADPP-7Core", "ADPP-8Core", "ADPP-Distributed"))
+
   runs$alg.scheme <- NA
-  runs$alg.scheme[runs$alg=="ADPP-singleProcess" | runs$alg=="ADPP-1Core" | runs$alg=="ADPP-8Core" | runs$alg=="ADPP-Distributed"] <- "AD"
-  
+  runs$alg.scheme[runs$alg=="ADPP-singleProcess" | runs$alg=="ADPP-1Core" | runs$alg=="ADPP-4Core" | runs$alg=="ADPP-7Core" | runs$alg=="ADPP-8Core" | runs$alg=="ADPP-Distributed"] <- "AD"
+
   runs$alg.ppvar <- "NA"
-  runs$alg.ppvar[runs$alg=="ADPP-singleProcess" | runs$alg=="ADPP-1Core" | runs$alg=="ADPP-8Core" | runs$alg=="ADPP-Distributed"] <- "PP"
-  
-  success <- 
-    succ.nagents(runs[is.element(runs$alg,.("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")),], Inf, maxagents)
-  
+  runs$alg.ppvar[runs$alg=="ADPP-singleProcess" | runs$alg=="ADPP-1Core" | runs$alg=="ADPP-4Core" | runs$alg=="ADPP-7Core" | runs$alg=="ADPP-8Core" | runs$alg=="ADPP-Distributed"] <- "PP"
+
+  success <-
+    succ.nagents(runs[is.element(runs$alg,.("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")),], Inf, maxagents)
+
   runtime <-
-    runtime.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+    runtime.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
   
   speedup <-
-    speedup.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+    speedup.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   replans <-
-    replans.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+    replans.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   planningTimeTotal <-
-   planningTimeTotal.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   planningTimeTotal.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   planningTime <-
-   planningTime.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   planningTime.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   noPlanTime <-
-   noPlanTime.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   noPlanTime.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
-#   runtimeNorm <-
-#     runtime.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
-#
-#   prolong <-
-#     prolong.vs.nagents(common.runs(runs, .("ADPP-1Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
-  
-  
   ggsave(filename=paste(plotsdir, env,"-success.pdf", sep=""), plot=success, width=8, height=5)
   ggsave(filename=paste(plotsdir, env,"-runtime.pdf", sep=""), plot=runtime, width=8, height=5)
   ggsave(filename=paste(plotsdir, env,"-speedup.pdf", sep=""), plot=speedup, width=8, height=5)
@@ -498,7 +419,7 @@ make.grid.plot <- function(env, plotsdir, min.instances.for.summary) {
   ggsave(filename=paste(plotsdir, env,"-planningTimeTotal.pdf", sep=""), plot=planningTimeTotal, width=8, height=5)
   ggsave(filename=paste(plotsdir, env,"-planningTime.pdf", sep=""), plot=planningTime, width=8, height=5)
   ggsave(filename=paste(plotsdir, env,"-runtime-noPlan.pdf", sep=""), plot=noPlanTime, width=8, height=5)
-#   ggsave(filename=paste(plotsdir, env,"-runtimeNorm.pdf", sep=""), plot=runtimeNorm, width=8, height=5)
+
 #   ggsave(filename=paste(plotsdir, env,"-prolong.pdf", sep=""), plot=prolong, width=8, height=5)
   
   # create a table of individual plots...
@@ -525,7 +446,7 @@ make.grid.plot <- function(env, plotsdir, min.instances.for.summary) {
     ncol=1)
   
   # some versions of ggplot2 and gridExtra are incompatible, causing the following line to fail
-  ggsave(filename=paste(plotsdir, env,".pdf", sep=""), plot=grid.plots, width=10, height=30)
+  ggsave(filename=paste(plotsdir, env,".pdf", sep=""), plot=grid.plots, width=10, height=45)
   
   grid.plots
 }
