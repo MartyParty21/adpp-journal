@@ -116,7 +116,7 @@ runtime.vs.nagents <- function(runs, min.instances, maxagents) {
     scale_shape_manual(values=get.shape(unique(time.sum$alg)), name="method") +
 
     scale_y_continuous(name="time to converge [s]") +
-    scale_x_continuous(limits=c(0,maxagents+3), name="no of robots [-]") +
+    scale_x_continuous(limits=c(0,maxagents+3), name="number of agents [-]") +
 
     theme_bw() +
     ggtitle("Avg. time to solution")
@@ -192,7 +192,7 @@ planningTimeTotal.per.agent.vs.nagents <- function(runs, min.instances, maxagent
     scale_shape_manual(values=get.shape(unique(planningTime.sum$alg)), name="method") +
 
     scale_y_continuous(name="planning time [s]") +
-    scale_x_continuous(limits=c(0,maxagents+3), name="no of robots [-]") +
+    scale_x_continuous(limits=c(0,maxagents+3), name="number of agents [-]") +
 
     theme_bw() +
     ggtitle("Avg. sum of planning times per agent")
@@ -223,7 +223,7 @@ planningTime.per.agent.vs.nagents <- function(runs, min.instances, maxagents) {
     scale_shape_manual(values=get.shape(unique(planningTime.sum$alg)), name="method") +
 
     scale_y_continuous(name="planning time [s]") +
-    scale_x_continuous(limits=c(0,maxagents+3), name="no of robots [-]") +
+    scale_x_continuous(limits=c(0,maxagents+3), name="number of agents [-]") +
 
     theme_bw() +
     ggtitle("Avg. planning time per agent")
@@ -256,7 +256,7 @@ noPlanTime.per.agent.vs.nagents <- function(runs, min.instances, maxagents) {
     scale_shape_manual(values=get.shape(unique(time.sum$alg)), name="method") +
 
     scale_y_continuous(name="runtime without planning [s]") +
-    scale_x_continuous(limits=c(0,maxagents+3), name="no of robots [-]") +
+    scale_x_continuous(limits=c(0,maxagents+3), name="number of agents [-]") +
 
     theme_bw() +
     ggtitle("Avg. runtime without planning")
@@ -265,16 +265,16 @@ noPlanTime.per.agent.vs.nagents <- function(runs, min.instances, maxagents) {
 }
 
 
-## replans vs. no of agents ##
+## planning vs. no of agents ##
 
-replans.per.agent.vs.nagents <- function(runs, min.instances, maxagents) {
+planning.per.agent.vs.nagents <- function(runs, min.instances, maxagents) {
   exp.sum <- ddply(runs, .(nagents, alg, radius), summarise,
-                   N = sum(!is.na(replans.per.agent)),
-                   mean = mean(replans.per.agent, na.rm=TRUE),
-                   sd = sd(replans.per.agent, na.rm=TRUE),
+                   N = sum(!is.na(planning.per.agent)),
+                   mean = mean(planning.per.agent, na.rm=TRUE),
+                   sd = sd(planning.per.agent, na.rm=TRUE),
                    se = sd / sqrt(N),
-                   min = min(replans.per.agent, na.rm=TRUE),
-                   max = max(replans.per.agent, na.rm=TRUE))
+                   min = min(planning.per.agent, na.rm=TRUE),
+                   max = max(planning.per.agent, na.rm=TRUE))
 
   exp.sum <- exp.sum[exp.sum$N >= min.instances, ]
 
@@ -319,7 +319,7 @@ runtime.vs.nagents.norm <- function(runs, min.instances, maxagents) {
     scale_shape_manual(values = get.shape(unique(time.sum$alg)), name = "method") +
 
     scale_y_continuous(name = "time to converge [s]") +
-    scale_x_continuous(limits = c(0, maxagents + 3), name = "no of robots [-]") +
+    scale_x_continuous(limits = c(0, maxagents + 3), name = "number of agents [-]") +
 
     theme_bw() +
     ggtitle("Avg. time to solution - normalized")
@@ -390,7 +390,7 @@ planningTimeTotal.per.agent.vs.nagents.norm <- function(runs, min.instances, max
     scale_shape_manual(values = get.shape(unique(planningTime.sum$alg)), name = "method") +
 
     scale_y_continuous(name = "planning time [s]") +
-    scale_x_continuous(limits = c(0, maxagents + 3), name = "no of robots [-]") +
+    scale_x_continuous(limits = c(0, maxagents + 3), name = "number of agents [-]") +
 
     theme_bw() +
     ggtitle("Avg. sum of planning times per agent - normalized")
@@ -421,7 +421,7 @@ planningTime.per.agent.vs.nagents.norm <- function(runs, min.instances, maxagent
     scale_shape_manual(values = get.shape(unique(planningTime.sum$alg)), name = "method") +
 
     scale_y_continuous(name = "planning time [s]") +
-    scale_x_continuous(limits = c(0, maxagents + 3), name = "no of robots [-]") +
+    scale_x_continuous(limits = c(0, maxagents + 3), name = "number of agents [-]") +
 
     theme_bw() +
     ggtitle("Avg. planning time per agent - normalized")
@@ -452,7 +452,7 @@ noPlanTime.per.agent.vs.nagents.norm <- function(runs, min.instances, maxagents)
     scale_shape_manual(values = get.shape(unique(time.sum$alg)), name = "method") +
 
     scale_y_continuous(name = "runtime without planning [s]") +
-    scale_x_continuous(limits = c(0, maxagents + 3), name = "no of robots [-]") +
+    scale_x_continuous(limits = c(0, maxagents + 3), name = "number of agents [-]") +
 
     theme_bw() +
     ggtitle("Avg. runtime without planning - normalized")
@@ -460,44 +460,6 @@ noPlanTime.per.agent.vs.nagents.norm <- function(runs, min.instances, maxagents)
   return(plot)
 }
 
-### quality ###
-
-prolong.vs.nagents <- function(runs, min.instances, maxagents) {
-  x <- runs
-
-  for (alg in unique(runs$alg)) {
-    x$prolong[x$alg==alg] <- 100*((x[x$alg==alg, "cost"]-x[x$alg=="ADPP-1Core", "cost"])/x[x$alg=="ADPP-1Core", "cost"])
-  }
-
-  # summarize
-
-  prolong.sum <- ddply(x[x$alg != "ADPP-1Core"], .(nagents, alg), summarise,
-                       N = sum(!is.na(prolong)),
-                       mean = mean(prolong, na.rm=TRUE),
-                       med = median(prolong, na.rm=TRUE),
-                       sd = sd(prolong, na.rm=TRUE),
-                       se = sd / sqrt(N),
-                       min = min(prolong, na.rm=TRUE),
-                       max = max(prolong, na.rm=TRUE))
-
-  prolong.sum <- prolong.sum[prolong.sum$N >= min.instances, ]
-
-  plot <- ggplot(prolong.sum, aes(x=nagents, y=mean,  color=alg, shape=alg, linetype=alg))+
-    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=2, position=pd, size=0.5, alpha=0.5) +
-    geom_line(size=1, position=pd)+
-    geom_point(size=4, fill="white", position=pd)+
-    #geom_text(aes(label=N, y=100, size=2), colour="black") +
-    scale_x_continuous(limits=c(0,maxagents+3), name="number of robots [-]") +
-    scale_y_continuous(name="prolongation [%]") +
-
-    scale_color_manual(values=get.color(unique(prolong.sum$alg)), name="method") +
-    scale_linetype_manual(values=get.linetype(unique(prolong.sum$alg)), name="method") +
-    scale_shape_manual(values=get.shape(unique(prolong.sum$alg)), name="method") +
-
-    theme_bw()  +
-    ggtitle("2: Avg. prolongation")
-  return(plot)
-}
 
 ### plot everything ###
 
@@ -512,69 +474,69 @@ make.grid.plot <- function(env, plotsdir, min.instances.for.summary) {
   runs$time[runs$time==0] <- NA
   runs$agents.in.cluster <- runs$nagents/runs$clusters
   runs$agents.in.cluster.ceil <- ceiling(runs$nagents/runs$clusters)
-  runs$replans.per.agent <- runs$replans / runs$nagents
+  runs$planning.per.agent <- runs$replans / runs$nagents
   runs$expansions.per.replan <- runs$expansions/runs$replans
 
   runs$planningTimeTotal.per.agent <- runs$planningTime / runs$nagents;
 
-  runs$planningTime.per.agent <- runs$planningTimeTotal.per.agent / runs$replans.per.agent;
+  runs$planningTime.per.agent <- runs$planningTimeTotal.per.agent / runs$planning.per.agent;
   runs$noPlanTime.per.agent <- (runs$time - runs$planningTimeTotal.per.agent)
 
 
 
   maxagents <- max(runs$nagents)
 
-  runs$alg = factor(runs$alg,levels=c("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core", "ADPP-7Core", "ADPP-8Core", "ADPP-Distributed"))
+  runs$alg = factor(runs$alg,levels=c("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core", "ADPP-7Core", "ADPP-Distributed"))
 
   runtime <-
-    runtime.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+    runtime.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   speedup <-
-    speedup.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+    speedup.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
-  replans <-
-    replans.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+  planning <-
+    planning.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   planningTimeTotal <-
-   planningTimeTotal.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   planningTimeTotal.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   planningTime <-
-   planningTime.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   planningTime.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core",  "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   noPlanTime <-
-   noPlanTime.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   noPlanTime.per.agent.vs.nagents(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core",  "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
 
   runtimeNorm <-
-    runtime.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+    runtime.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core",  "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   speedupNorm <-
-    speedup.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+    speedup.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   planningTimeTotalNorm <-
-   planningTimeTotal.per.agent.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   planningTimeTotal.per.agent.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   planningTimeNorm <-
-   planningTime.per.agent.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   planningTime.per.agent.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
   noPlanTimeNorm <-
-   noPlanTime.per.agent.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-8Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
+   noPlanTime.per.agent.vs.nagents.norm(common.runs(runs, .("ADPP-singleProcess", "ADPP-1Core", "ADPP-4Core","ADPP-7Core", "ADPP-Distributed")), min.instances.for.summary, maxagents)
 
 
 
-  ggsave(filename=paste(plotsdir, env,"-runtime.pdf", sep=""), plot=runtime, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-speedup.pdf", sep=""), plot=speedup, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-replans.pdf", sep=""), plot=replans, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-planningTimeTotal.pdf", sep=""), plot=planningTimeTotal, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-planningTime.pdf", sep=""), plot=planningTime, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-runtime-noPlan.pdf", sep=""), plot=noPlanTime, width=8, height=5)
+  ggsave(filename=paste(plotsdir, env,"-runtime.pdf", sep=""), plot=runtime + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-speedup.pdf", sep=""), plot=speedup + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-planning.pdf", sep=""), plot=planning + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-planningTimeTotal.pdf", sep=""), plot=planningTimeTotal + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-planningTime.pdf", sep=""), plot=planningTime + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-runtime-noPlan.pdf", sep=""), plot=noPlanTime + theme(legend.position="bottom"), width=8, height=4)
 
-  ggsave(filename=paste(plotsdir, env,"-runtime-norm.pdf", sep=""), plot=runtimeNorm, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-speedup-norm.pdf", sep=""), plot=speedupNorm, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-replans.pdf", sep=""), plot=replans, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-planningTimeTotal-norm.pdf", sep=""), plot=planningTimeTotalNorm, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-planningTime-norm.pdf", sep=""), plot=planningTimeNorm, width=8, height=5)
-  ggsave(filename=paste(plotsdir, env,"-runtime-noPlan-norm.pdf", sep=""), plot=noPlanTimeNorm, width=8, height=5)
+  ggsave(filename=paste(plotsdir, env,"-runtime-norm.pdf", sep=""), plot=runtimeNorm + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-speedup-norm.pdf", sep=""), plot=speedupNorm + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-planning.pdf", sep=""), plot=planning + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-planningTimeTotal-norm.pdf", sep=""), plot=planningTimeTotalNorm + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-planningTime-norm.pdf", sep=""), plot=planningTimeNorm + theme(legend.position="bottom"), width=8, height=4)
+  ggsave(filename=paste(plotsdir, env,"-runtime-noPlan-norm.pdf", sep=""), plot=noPlanTimeNorm + theme(legend.position="bottom"), width=8, height=4)
 
 #   ggsave(filename=paste(plotsdir, env,"-prolong.pdf", sep=""), plot=prolong, width=8, height=5)Norm
 
@@ -593,7 +555,7 @@ make.grid.plot <- function(env, plotsdir, min.instances.for.summary) {
   grid.plots <- arrangeGrob(
     runtime + theme(legend.position="bottom"),
     speedup + theme(legend.position="bottom"),
-    replans + theme(legend.position="bottom"),
+    planning + theme(legend.position="bottom"),
     planningTimeTotal + theme(legend.position="bottom"),
     planningTime + theme(legend.position="bottom"),
     noPlanTime + theme(legend.position="bottom"),
