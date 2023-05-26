@@ -6,10 +6,19 @@ import cz.agents.alite.communication.content.Content;
  * Communicator set to delegate all the work regarding communication channel and message passing to external listener
  */
 public class ExternalCommunicator extends InboxBasedCommunicator {
+    /**
+     * A listener taking care of sending messages
+     */
     private final MessageHandler senderHandler;
 
+    /**
+     * Id of the agent the communicator is taking care of
+     */
     private final int id;
 
+    /**
+     * Number of messages sent
+     */
     private int messageCount;
 
     public ExternalCommunicator(MessageHandler senderHandler, int id) {
@@ -43,7 +52,7 @@ public class ExternalCommunicator extends InboxBasedCommunicator {
     public void receiveMessage(Message message) {
         // Not used for external communicator
     }
-    
+
     @Override
     public void sendMessage(Message message) {
         senderHandler.notify(message);
@@ -54,6 +63,13 @@ public class ExternalCommunicator extends InboxBasedCommunicator {
         return null;
     }
 
+    /**
+     * Creates a message with content designated for a Picocluster platform message
+     * @param sender serialized UUID of sender node
+     * @param content serialized content of message to be sent
+     * @param id id of the message to be sent
+     * @return new Message containing passed ids and content
+     */
     public static Message createMessageFromPicoMessage(String sender, Content content, long id) {
         return new Message(sender, content, id);
     }
