@@ -1,3 +1,19 @@
+Bachelor thesis - ADPP submodule
+==============================
+
+**Name:** Experimental validation of distributed algorithms
+**Author:** Martin Rokyta (rokytmar@fel.cvut.cz)
+**Supervisor:** doc. Ing. Jiří Vokřínek, Ph.D. (jiri.vokrinek@fel.cvut.cz)
+**Department of supervisor:** Department of Computer Science
+
+About
+------
+This repository includes a customized fork of the ADPP project. The project was integrated to a platform for running distributed algorithms as a part of a bachelor thesis, and is only used as a submodule in the overal project
+This project can still be started as originally implemented, however, in order to start it as a distributed algorithm of the above-mentioned platform, follow the manual in the [parent project](https://gitlab.fel.cvut.cz/rokytmar/bachelor-thesis)
+
+The original content of README follows
+
+
 README
 ======
 
